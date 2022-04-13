@@ -38,6 +38,9 @@ async def on_message(message):
                 if message_contents[3] == "no":
                     entry.change_save(False)
             client.main_list.append(entry)
+            if entry.save:
+                entry.add_list_to_save_file()
+
         await message.channel.send("Created Tier List")
 
     if message_contents[0] == "!showTierList":
@@ -62,6 +65,40 @@ async def on_message(message):
                 save_entry_to_list(entry, tier_list)
             await message.channel.send("created entry")
 
+    if message_contents[0] == "!help":
+        if len(message_contents) == 1:
+            await message.channel.send("Hi there, below is the manual for the Tier List Maker Discord Bot.\n\n"
+                                       "Here is a list of available commands:\n"
+                                       "!createTierList\n"
+                                       "!showTierList\n"
+                                       "!addEntryToTierList\n"
+                                       "!help\n\n"
+                                       "To see more help on a command type '!help (command)'.\n")
+        if len(message_contents) > 1:
+            if message_contents[1] == "createTierList":
+                await message.channel.send(
+                    "Correct syntax to use !createTierList ({} means required, [] means optional)\n\n"
+                    "!createTierList {title of tier list} [category of tier list] [save tier list]\n\n"
+                    "!createTierList creates a tier list object with a title. "
+                    "You can add a category if you would like and you can also choose "
+                    "to not save the list because a list is saved by default.\n")
+            elif message_contents[1] == "showTierList":
+                await message.channel.send(
+                    "Correct syntax to use !showTierList ({} means required, [] means optional):\n"
+                    "!showTierList {title of tier list} [owner]\n\n"
+                    "!showTierList displays the tier list object with the matching title. "
+                    "By default, it will display tier lists you own, but if you would like "
+                    "to display another person's tier list, you can add a owner specifier.\n")
+            elif message_contents[1] == "addEntryToTierList":
+                await message.channel.send(
+                    "Correct syntax to use !createTierList ({} means required, [] means optional)\n\n"
+                    "!addEntryToTierList {title of tier list} [name of entry] [rank of entry]\n\n"
+                    "!addEntryToTierList creates a tier list entry object and adds it to a "
+                    "tier list. You can only add an entry to a tier list you own.\n")
+            else:
+                await message.channel.send("Sorry, I didn't recognize the command you were looking for. "
+                                           "Use !help to get a list of commands you can use.")
+
 
 @client.event
 async def on_member_join(member):
@@ -73,14 +110,7 @@ async def on_member_join(member):
 
 
 def get_tier_list(title, owner):
-    print(title)
-    print(owner)
     for x in range(len(client.main_list)):
-        print(client.main_list[x])
-        print(client.main_list[x].title)
-        print(client.main_list[x].owner)
-        print(client.main_list[x].title == title)
-        print(client.main_list[x].owner == owner.id)
         if client.main_list[x].title == title and client.main_list[x].owner == owner.id:
             return client.main_list[x]
     return None
@@ -109,6 +139,7 @@ def save_entry_to_list(entry, tier_list):
         if tier_list.title == title:
             entry_string = entry.to_string()
             save_file.write(entry_string)
+    save_file.close()
 
 
 class TierList:
@@ -143,6 +174,18 @@ class TierList:
 
     def change_save(self, save):
         self.save = save
+
+    def add_list_to_save_file(self):
+        save_file = open("save-tier-lists.txt", "a")
+        save_file.write(f"{self.title} {str(self.owner)} {str(len(self.list_of_entries))}\n")
+        save_file.close()
+        save_file = open("save-tier-lists.txt")
+        lines = save_file.readlines()
+        lines[0] = f"{str(len(client.main_list))}\n"
+        save_file.close()
+        save_file = open("save-tier-lists.txt", "w")
+        save_file.writelines(lines)
+        save_file.close()
 
 
 class TierListEntry:
