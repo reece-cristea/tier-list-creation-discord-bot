@@ -1,4 +1,3 @@
-# bot.py
 import discord
 TOKEN = 'OTQ4OTc1MDIxMjk1MDM4NTE2.YiDn3A.a8OyeOmtCioEdx9YYk3sntEWjlY'
 GUILD = 'DiscordBot'
@@ -12,7 +11,6 @@ client.main_list = []
 async def on_ready():
     load_tier_lists()
     print(len(client.main_list))
-    print(client.main_list[0].owner)
     for guild in client.guilds:
         if guild.name == GUILD:
             print(f"{client.user} is connected to the following guild: {guild.name}({guild.id})")
@@ -48,20 +46,20 @@ async def on_message(message):
             tier_list = get_tier_list(message_contents[1], message.author)
             entry_list = tier_list.list_of_entries
             await message.channel.send(tier_list.title)
-            await message.channel.send(f"No.                            Name                                    Rank")
+            await message.channel.send(f"No. Name Rank")
             count = 0
             for entry in entry_list:
                 count += 1
-                await message.channel.send(f"{count}.                               {entry.to_string()}")
+                await message.channel.send(f"{count}. {entry.to_string()}")
 
     if message_contents[0] == "!addEntryToTierList":
         await message.channel.send("here")
         if len(message_contents) == 4:
             tier_list = get_tier_list(message_contents[1], message.author)
             entry = TierListEntry(message_contents[2], message_contents[3])
-            print(tier_list)
             tier_list.add_entry(entry.name, entry.rank)
             if tier_list.save:
+                print("here")
                 save_entry_to_list(entry, tier_list)
             await message.channel.send("created entry")
 
@@ -111,7 +109,12 @@ async def on_member_join(member):
 
 def get_tier_list(title, owner):
     for x in range(len(client.main_list)):
-        if client.main_list[x].title == title and client.main_list[x].owner == owner.id:
+        print("here list")
+        print(client.main_list[x].title)
+        print(title)
+        print(client.main_list[x].owner)
+        print(str(owner.id))
+        if client.main_list[x].title == title and client.main_list[x].owner == str(owner.id):
             return client.main_list[x]
     return None
 
@@ -132,13 +135,21 @@ def load_tier_lists():
 
 
 def save_entry_to_list(entry, tier_list):
-    save_file = open("save-tier-lists.txt")
-    num = int(save_file.readline())
-    for x in range(num):
-        title = save_file.readline().split()[0]
+    save_file = open("save-tier-lists.txt", "r")
+    lines = save_file.readlines()
+    for x in range(len(lines)):
+        title = lines[x].split()[0]
         if tier_list.title == title:
+            tier_list_info = lines[x].split()
+            tier_list_info[2] = str(len(tier_list.list_of_entries))
+            new_tier_list_info = " ".join(tier_list_info) + "\n"
+            lines[x] = new_tier_list_info
             entry_string = entry.to_string()
-            save_file.write(entry_string)
+            lines.insert(x + 1, entry_string + "\n")
+            break
+    save_file.close()
+    save_file = open("save-tier-lists.txt", "w")
+    save_file.write("".join(lines))
     save_file.close()
 
 
@@ -152,7 +163,7 @@ class TierList:
     def __init__(self, title, save, owner):
         self.title = title
         self.save = save
-        self.owner = owner
+        self.owner = str(owner)
         self.category = None
         self.list_of_entries = []
 
@@ -197,7 +208,7 @@ class TierListEntry:
         self.rank = rank
 
     def to_string(self):
-        entry = str(self.name + "                                    " + str(self.rank))
+        entry = str(self.name + " " + str(self.rank))
         return entry
 
 
